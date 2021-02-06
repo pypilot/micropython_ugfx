@@ -1,0 +1,19 @@
+this is for ili driver commands to support ugfx in micropython
+
+to compile c++:
+
+diff --git a/ports/esp32/Makefile b/ports/esp32/Makefile
+index dcf4110cf..c473783e3 100644
+--- a/ports/esp32/Makefile
++++ b/ports/esp32/Makefile
+@@ -378,7 +378,8 @@ DRIVERS_SRC_C = $(addprefix drivers/,\
+ 
+ OBJ_MP =
+ OBJ_MP += $(PY_O)
+-OBJ_MP += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
++OBJ_SRC_C = $(SRC_C:.c=.o)
++OBJ_MP += $(addprefix $(BUILD)/, $(OBJ_SRC_C:.cpp=.o))
+ OBJ_MP += $(addprefix $(BUILD)/, $(EXTMOD_SRC_C:.c=.o))
+ OBJ_MP += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
+ OBJ_MP += $(addprefix $(BUILD)/, $(DRIVERS_SRC_C:.c=.o))
+
