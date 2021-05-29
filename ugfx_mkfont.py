@@ -42,7 +42,7 @@ for fn in fonts:
     for cn in fonts[fn]:
         print('{'+str(len(fonts[fn][cn]))+', cn'+fn+cn + ', data'+fn+cn+'}, ')
     print('};')
-    print('const struct font font'+fn+'={fn'+fn+', ' + str(len(fonts[fn])) + ', characters'+fn+'};')
+    print('const struct font font'+fn+' PROGMEM ={fn'+fn+', ' + str(len(fonts[fn])) + ', characters'+fn+'};')
     print('')
 
 print('const struct font *fonts[] PROGMEM = {')

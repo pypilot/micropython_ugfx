@@ -16,6 +16,7 @@ void *ugfx_surface_from_file_c(const char* filename, int bypp);
 
 void ugfx_surface_c_free(void *s);
 
+void ugfx_surface_c_load(void *s, const char* filename, int bypp);
 void ugfx_surface_c_info(void *s, int *width, int *height, int *bypp, char **data);
 void ugfx_surface_c_file_info(void *dest, const char *filename, int *width, int *height);
 void ugfx_surface_c_blit_file(void *dest, const char *filename, int xoff, int yoff);

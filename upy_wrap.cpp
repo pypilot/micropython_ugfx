@@ -13,7 +13,15 @@ void *ugfx_surface_from_surface_c(void *s) { return (void*)new surface((surface*
 void *ugfx_surface_from_data_c(int w, int h, int internal_bypp, const char *data32) { return (void*)new surface(w, h, internal_bypp, data32); }
 void *ugfx_surface_from_file_c(const char* filename, int bypp) { return (void*)new surface(filename, bypp); }
 
-void ugfx_surface_c_free(void *s) { delete (surface*)s; }
+//void ugfx_surface_c_free(void *s) { delete (surface*)s; }
+
+
+void ugfx_surface_c_load(void *s, const char* filename, int bypp)
+{
+    surface *surf = (surface*)s;
+    surf->load(filename, bypp);
+}
+
     
 void ugfx_surface_c_info(void *s, int *width, int *height, int *bypp, char **data) {
     surface *surf = (surface*)s;

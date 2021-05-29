@@ -45,6 +45,7 @@ surface::surface(surface *s)
     width = s->width, height = s->height;
     bypp = s->bypp;
     p = new char [width*height*bypp];
+    allocated_size = width*height*bypp;
     memcpy(p, s->p, width*height*bypp);
     line_length = width*bypp;
 }
@@ -54,9 +55,8 @@ surface::surface(int w, int h, int internal_bypp, const char *data32)
     xoffset = yoffset = 0;
     width = w, height = h;
     bypp = internal_bypp;
-    printf("make surface, %d %d %d\n", w, h, internal_bypp);
     p = new char [width*height*bypp];
-    printf("make surface ok, %p\n", p);
+    allocated_size = width*height*bypp;
     line_length = width*bypp;
 
     if (!data32)
@@ -103,8 +103,13 @@ uint32_t cksum(const char *gray_data, int size)
 
 surface::surface(const char* filename, int tbypp)
 {
-    width = height = bypp = 0;
     p = NULL;
+    load(filename, tbypp);
+}
+
+void surface::load(const char* filename, int tbypp)
+{
+    width = height = bypp = 0;
 
 #ifdef INTERNAL_FONTS
     const struct character *c = 0;
@@ -141,25 +146,31 @@ surface::surface(const char* filename, int tbypp)
         goto fail;
     }
 #endif
-    width16 = *(uint16_t*)(d+0);
+    memcpy(&width16, d+0, sizeof width16);
     height16 = *(uint16_t*)(d+2);
     bypp16 = *(uint16_t*)(d+4);
     colors16 = *(uint16_t*)(d+6);
 
-    width = width16;
-    height = height16;
-
-    if(width*height > 65536) {
+    if(width16*height16 > 65536) {
         fprintf(stderr, "invalid surface size\n");
         goto fail;
     }
     
     xoffset = yoffset = 0;
-    line_length = width*bypp;
+    line_length = width16*bypp;
 
+    if(!p) {
+        p = new char [width16*height16*bypp];
+        allocated_size = width16*height16*bypp;
+    } else {
+        if(width16*height16*bypp > allocated_size) {
+            fprintf(stderr, "file surface too large to fit! %d %d %d %d\n", width16, height16, bypp, allocated_size);
+            goto fail;
+        }
+    }
     
-    p = new char [width*height*bypp];
-
+    width = width16;
+    height = height16;
 
     if(colors16 != 1) // only greyscale supported
         goto fail;
@@ -229,6 +240,7 @@ fail:
 surface::~surface()
 {
     delete [] p;
+    allocated_size = 0;
 }
 
 void surface::store_grey(const char *filename)
@@ -465,8 +477,9 @@ void surface::box(int x1, int y1, int x2, int y2, uint32_t c)
     case 1:
     {
         uint16_t t = c&0xff;
-        for(int y = y1; y <= y2; y++)
-            memset(p + y*line_length + x1, t, x2-x1+1);
+        if(x1 <= x2)
+            for(int y = y1; y <= y2; y++)
+                memset(p + y*line_length + x1, t, x2-x1+1);
     } break;
     case 2:
     {

@@ -17,6 +17,7 @@ public:
     surface(const char* filename, int bypp);
     virtual ~surface();
 
+    void load(const char *filename, int bypp);
     void store_grey(const char *filename);
     void blit(surface *src, int xoff, int yoff, bool flip=false);
     void magnify(surface *src, int factor);
@@ -38,6 +39,7 @@ public:
     int xoffset, yoffset, line_length;
 
 protected:
+    int allocated_size;
     surface() {}
 };
 

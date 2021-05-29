@@ -21,8 +21,30 @@ typedef struct _ugfx_surface_obj_t {
     mp_obj_base_t base;
     void *ptr;
     int contrast, hue;
+    int backlight;
 } ugfx_surface_obj_t;
 const mp_obj_type_t ugfx_surface_type;
+
+STATIC mp_obj_t ugfx_surface_load(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    enum {ARG_filename, ARG_bypp};
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_filename, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = mp_const_none } },
+        { MP_QSTR_bypp, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } }
+    };
+
+    ugfx_surface_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    mp_obj_t *filename = MP_OBJ_TO_PTR(args[ARG_filename].u_obj);
+
+    char *path = (char *)mp_obj_str_get_str(filename);
+    mp_int_t bypp = args[ARG_bypp].u_int;
+
+    ugfx_surface_c_load(self->ptr, path, bypp);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(ugfx_surface_load_obj, 0, ugfx_surface_load);
 
 STATIC mp_obj_t ugfx_surface_blit(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum {ARG_src, ARG_xoff, ARG_yoff, ARG_flip};
@@ -138,7 +160,7 @@ STATIC mp_obj_t ugfx_surface_fill(size_t n_args, const mp_obj_t *pos_args, mp_ma
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(ugfx_surface_fill_obj, 0, ugfx_surface_fill);
 
 
-void ili_refresh(int contrast, int hue, int width, int height, char *data);
+void ili_refresh(int contrast, int hue, int backlight, int width, int height, char *data);
 
 STATIC mp_obj_t ugfx_display_surface_refresh(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     ugfx_surface_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
@@ -146,7 +168,7 @@ STATIC mp_obj_t ugfx_display_surface_refresh(size_t n_args, const mp_obj_t *pos_
     char *data;
     ugfx_surface_c_info(self->ptr, &width, &height, &bypp, &data);
 
-    ili_refresh(self->contrast, self->hue, width, height, data);
+    ili_refresh(self->contrast, self->hue, self->backlight, width, height, data);
 
     return mp_const_none;
 }
@@ -164,13 +186,13 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(ugfx_surface_free_obj, 0, ugfx_surface_free);
 
 STATIC const mp_rom_map_elem_t ugfx_surface_locals_dict_table[] = {
     // instance methods
+    { MP_ROM_QSTR(MP_QSTR_load),                MP_ROM_PTR(&ugfx_surface_load_obj) },
     { MP_ROM_QSTR(MP_QSTR_blit),                MP_ROM_PTR(&ugfx_surface_blit_obj) },
     { MP_ROM_QSTR(MP_QSTR_line),                MP_ROM_PTR(&ugfx_surface_line_obj) },
     { MP_ROM_QSTR(MP_QSTR_box),                 MP_ROM_PTR(&ugfx_surface_box_obj) },
     { MP_ROM_QSTR(MP_QSTR_invert),              MP_ROM_PTR(&ugfx_surface_invert_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill),                MP_ROM_PTR(&ugfx_surface_fill_obj) },
-    { MP_ROM_QSTR(MP_QSTR_refresh),             MP_ROM_PTR(&ugfx_display_surface_refresh_obj) },
-    { MP_ROM_QSTR(MP_QSTR_free),                MP_ROM_PTR(&ugfx_surface_free_obj) },
+    { MP_ROM_QSTR(MP_QSTR_refresh),             MP_ROM_PTR(&ugfx_display_surface_refresh_obj) }
 };
 STATIC MP_DEFINE_CONST_DICT(ugfx_surface_locals_dict, ugfx_surface_locals_dict_table);
 
@@ -208,6 +230,7 @@ STATIC mp_obj_t ugfx_surface_make_new(const mp_obj_type_t *type, size_t n_args, 
 
     self->contrast = 60;
     self->hue = 170;
+    self->backlight = 1;
     self->ptr = ugfx_surface_from_data_c(w, h, bypp, 0);
 
     return MP_OBJ_FROM_PTR(self);
@@ -240,6 +263,13 @@ STATIC void ugfx_surface_attr(mp_obj_t self_in, qstr attribute, mp_obj_t *dest) 
             dest[0] = MP_OBJ_NULL;
         } else
             dest[0] = mp_obj_new_int(self->hue);
+    else
+    if(attribute == MP_QSTR_backlight)
+        if(dest[0] == MP_OBJ_SENTINEL) {
+            self->backlight = mp_obj_get_int(dest[1]);
+            dest[0] = MP_OBJ_NULL;
+        } else
+            dest[0] = mp_obj_new_int(self->backlight);
     else {
         // fallback to lookup
         const mp_obj_type_t *type = mp_obj_get_type(self_in);
