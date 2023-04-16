@@ -31,6 +31,8 @@
 */
 
 #define TDISPLAY
+//#define TDISPLAYALT
+//#define ILI9341_3_2  // 3.2 inch tft display no touch with ILI9341
 
 #ifdef TDISPLAY
 #define PIN_NUM_MISO 17
@@ -40,6 +42,28 @@
 
 #define PIN_NUM_DC   16
 #define PIN_NUM_RST  20
+#define LINE_LEN 136
+
+#elif defined(ILI9341_3_2)
+
+#define PIN_NUM_MISO 17
+#define PIN_NUM_MOSI 19
+#define PIN_NUM_CLK  18
+#define PIN_NUM_CS   5
+
+#define PIN_NUM_DC   16
+#define PIN_NUM_RST  23
+#define LINE_LEN 317
+
+#elif defined(TDISPLAYALT)
+
+#define PIN_NUM_MISO 17
+#define PIN_NUM_MOSI 19
+#define PIN_NUM_CLK  18
+#define PIN_NUM_CS   5
+
+#define PIN_NUM_DC   16
+#define PIN_NUM_RST  23
 #define LINE_LEN 136
 
 #else
@@ -59,7 +83,11 @@
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
-#define PARALLEL_LINES 20 // must divide into 240 and 320
+#ifdef ILI9341_3_2
+#define PARALLEL_LINES 1 // must divide into 240 and 320
+#else
+#define PARALLEL_LINES 20
+#endif
 
 static spi_device_handle_t ili_spi;
 static uint16_t *dma_lines[2];
@@ -69,12 +97,12 @@ static uint8_t backlight = 0;
  The LCD needs a bunch of command/argument values to be initialized. They are stored in this struct.
  aa*/
 typedef struct {
-    uint8_t cmd;
-    uint8_t data[16];
-    uint8_t databytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
+	uint8_t cmd;
+	uint8_t data[16];
+	uint8_t databytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
 } lcd_init_cmd_t;
 
-#if 0
+#ifdef TDISPLAYALT
 DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[]={
     /* Power contorl B, power control = 0, DC_ENA = 1 */
     {0xCF, {0x00, 0x83, 0X30}, 3},
@@ -134,7 +162,52 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[]={
     {0x29, {0}, 0x80},
     {0, {0}, 0xff},
 };
-#elif 1
+#elif defined(ILI9341_3_2)
+DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
+//		{ 0xCB, {0x39, 0x2C, 0x00, 0x34, 0x02},  5},
+//		{ 0xCF, { 0x00, 0xC1, 0x30 }, 3 },
+//		{ 0xE8, { 0x85, 0x00, 0x78 }, 3 },
+//		{ 0xEA, {0x00, 0x00}, 2 },
+//		{ 0xED, { 0x64, 0x03, 0x12, 0x81 }, 4 },
+//		{ 0xF7, {0x20}, 1 },
+//		{ 0xEF, { 0x03, 0x80, 0x02 }, 3 },
+//		{ 0xC0, {0x23}, 1 },
+//		{ 0xC1, {0x10}, 1 },
+//		{ 0xC5, {0x3e, 0x28}, 2 },
+//		{ 0xC7, {0x86}, 1 },
+//		{ 0xB1, {0x00, 0x13}, 2 },
+//		{ 0x36, {0x08}, 1 },
+//		{ 0x3A, {0x55}, 1 },
+//		{ 0x29, {0}, 0x80},
+//		{ 0, {0}, 0xff}
+		{ 0xEF, { 0x03, 0x80, 0x02 }, 3 },
+		{ 0xCF, { 0x00, 0xC1, 0x30 }, 3 },
+		{ 0xED, { 0x64, 0x03, 0x12, 0x81 }, 4 },
+		{ 0xE8, { 0x85, 0x00, 0x78 }, 3 },
+		{ 0xCB, { 0x39, 0x2C, 0x00, 0x34, 0x02 }, 5 },
+		{ 0xF7, {0x20}, 1 },
+		{ 0xEA, {0x00, 0x00}, 2 },
+		{ 0xC0, {0x23}, 1 },
+		{ 0xC1, {0x10}, 1 },
+		{ 0xC5, {0x3E, 0x28}, 2 },
+		{ 0xC7, {0x86}, 1 },
+		//{ 0x80, {0x40}, 1 },
+		{0x36, {0x48}, 1 },
+		{ 0x3A, {0x55}, 1 },
+		{ 0xB1, {0x00, 0x13}, 2 },
+		{ 0xB6, {0x08, 0x82, 0x27}, 3 },
+		{ 0xF2, {0x00}, 1 },
+		{ 0x26, {0x01}, 1 },
+		{ 0xE0, {0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00}, 15 },
+		{ 0xE1, {0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F}, 15 },
+		//{0x36, {0x40}, 1 },
+		{0x11, {0}, 0x80},
+		{0x29, {0}, 0x80},
+		{0x36, {0x48}, 1 },
+		{0x36, {0xE0}, 1 },
+		{0, {0}, 0xff}
+};
+#elif defined(TDISPLAY)
 DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[]={
 //    {0x01, {0}, 0}, // software reset
     {0xCB, {0x39, 0x2C, 0x00, 0x34, 0x02},  5},
@@ -351,178 +424,180 @@ static void send_lines(int ypos, int line)
     }
 #ifdef TDISPLAY
     const int sx = 52, sy = 41;
+#elif defined(ILI9341_3_2)
+	const int sx = 2, sy = 1;
 #else
     const int sx = 0, sy = 1;
 #endif
-    
-    ypos += sy;
-    trans[0].tx_data[0]=0x2A;           //Column Address Set
-    trans[1].tx_data[0]=0;              //Start Col High
-    trans[1].tx_data[1]=sx;             //Start Col Low
-    trans[1].tx_data[2]=(sx+LINE_LEN-1)>>8;       //End Col High
-    trans[1].tx_data[3]=(sx+LINE_LEN-1)&0xff;     //End Col Low
-    trans[2].tx_data[0]=0x2B;           //Page address set
-    trans[3].tx_data[0]=ypos>>8;        //Start page high
-    trans[3].tx_data[1]=ypos&0xff;      //start page low
-    trans[3].tx_data[2]=(ypos+PARALLEL_LINES-1)>>8;    //end page high
-    trans[3].tx_data[3]=(ypos+PARALLEL_LINES-1)&0xff;  //end page low
-    trans[4].tx_data[0]=0x2C;           //memory write
-    trans[5].tx_buffer=dma_lines[line];        //finally send the line data
-    trans[5].length=LINE_LEN*2*8*PARALLEL_LINES;          //Data length, in bits
-    trans[5].flags=0; //undo SPI_TRANS_USE_TXDATA flag
 
-    //Queue all transactions.
-    for (x=0; x<6; x++) {
-        //printf("ok %d %d\n", x, trans[x].length);
-        ret=spi_device_queue_trans(ili_spi, &trans[x], portMAX_DELAY);
-        assert(ret==ESP_OK);
-    }
+	ypos += sy;
+	trans[0].tx_data[0] = 0x2A;           //Column Address Set
+	trans[1].tx_data[0] = 0;              //Start Col High
+	trans[1].tx_data[1] = sx;             //Start Col Low
+	trans[1].tx_data[2] = (sx + LINE_LEN - 1) >> 8;       //End Col High
+	trans[1].tx_data[3] = (sx + LINE_LEN - 1) & 0xff;     //End Col Low
+	trans[2].tx_data[0] = 0x2B;           //Page address set
+	trans[3].tx_data[0] = ypos >> 8;        //Start page high
+	trans[3].tx_data[1] = ypos & 0xff;      //start page low
+	trans[3].tx_data[2] = (ypos + PARALLEL_LINES - 1) >> 8;    //end page high
+	trans[3].tx_data[3] = (ypos + PARALLEL_LINES - 1) & 0xff;  //end page low
+	trans[4].tx_data[0] = 0x2C;           //memory write
+	trans[5].tx_buffer = dma_lines[line];        //finally send the line data
+	trans[5].length = LINE_LEN * 2 * 8 * PARALLEL_LINES;  //Data length, in bits
+	trans[5].flags = 0; //undo SPI_TRANS_USE_TXDATA flag
 
-    //When we are here, the SPI driver is busy (in the background) getting the transactions sent. That happens
-    //mostly using DMA, so the CPU doesn't have much to do here. We're not going to wait for the transaction to
-    //finish because we may as well spend the time calculating the next line. When that is done, we can call
-    //send_line_finish, which will wait for the transfers to be done and check their status.
+	//Queue all transactions.
+	for (x = 0; x < 6; x++) {
+		//printf("ok %d %d\n", x, trans[x].length);
+		ret = spi_device_queue_trans(ili_spi, &trans[x], portMAX_DELAY);
+		assert(ret == ESP_OK);
+	}
+
+	//When we are here, the SPI driver is busy (in the background) getting the transactions sent. That happens
+	//mostly using DMA, so the CPU doesn't have much to do here. We're not going to wait for the transaction to
+	//finish because we may as well spend the time calculating the next line. When that is done, we can call
+	//send_line_finish, which will wait for the transfers to be done and check their status.
 }
-
 
 // This is the function which will be called from Python as test.add_ints(a, b).
 static void lcd_setup() {
-    esp_err_t ret;
-    spi_bus_config_t buscfg={
-        .miso_io_num=PIN_NUM_MISO,
-        .mosi_io_num=PIN_NUM_MOSI,
-        .sclk_io_num=PIN_NUM_CLK,
-        .quadwp_io_num=-1,
-        .quadhd_io_num=-1,
-        .max_transfer_sz=PARALLEL_LINES*LINE_LEN*2+8
-    };
-    spi_device_interface_config_t devcfg={
-        .clock_speed_hz=20*1000*1000,           //Clock out at 10 MHz
-        .mode=0,                                //SPI mode 0
-        .spics_io_num=PIN_NUM_CS,               //CS pin
-        .queue_size=5,                          //We want to be able to queue 7 transactions at a time
-        .pre_cb=lcd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
-    };
-    //Initialize the SPI bus
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
-    ESP_ERROR_CHECK(ret);
-    //Attach the LCD to the SPI bus
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &ili_spi);
-    ESP_ERROR_CHECK(ret);
-    //Allocate memory for the pixel buffers
-    for (int i=0; i<2; i++) {
-        dma_lines[i]=heap_caps_malloc(LINE_LEN*PARALLEL_LINES*sizeof(uint16_t), MALLOC_CAP_DMA);
-        memset(dma_lines[i], 0, LINE_LEN*PARALLEL_LINES*sizeof(uint16_t));
-    }
+	esp_err_t ret;
+	spi_bus_config_t buscfg = { .miso_io_num = PIN_NUM_MISO, .mosi_io_num =
+			PIN_NUM_MOSI, .sclk_io_num = PIN_NUM_CLK, .quadwp_io_num = -1,
+			.quadhd_io_num = -1, .max_transfer_sz = PARALLEL_LINES * LINE_LEN
+					* 2 + 8 };
+	spi_device_interface_config_t devcfg = { .clock_speed_hz = 20 * 1000 * 1000, //Clock out at 10 MHz
+			.mode = 0,                                //SPI mode 0
+			.spics_io_num = PIN_NUM_CS,               //CS pin
+			.queue_size = 5, //We want to be able to queue 7 transactions at a time
+			.pre_cb = lcd_spi_pre_transfer_callback, //Specify pre-transfer callback to handle D/C line
+			};
+	//Initialize the SPI bus
+	ret = spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+	ESP_ERROR_CHECK(ret);
+	//Attach the LCD to the SPI bus
+	ret = spi_bus_add_device(HSPI_HOST, &devcfg, &ili_spi);
+	ESP_ERROR_CHECK(ret);
+	//Allocate memory for the pixel buffers
+	for (int i = 0; i < 2; i++) {
+		dma_lines[i] = heap_caps_malloc(
+				LINE_LEN * PARALLEL_LINES * sizeof(uint16_t), MALLOC_CAP_DMA);
+		memset(dma_lines[i], 0, LINE_LEN * PARALLEL_LINES * sizeof(uint16_t));
+	}
 
-    //Initialize non-SPI GPIOs
-    gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);
-    gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
-    gpio_set_direction(PIN_NUM_BCKL, GPIO_MODE_OUTPUT);
+	//Initialize non-SPI GPIOs
+	gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);
+	gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
+	gpio_set_direction(PIN_NUM_BCKL, GPIO_MODE_OUTPUT);
 
-    ///Disable backlight
-    gpio_set_level(PIN_NUM_BCKL, 0);
+	///Disable backlight
+	gpio_set_level(PIN_NUM_BCKL, 0);
 }
 
 static uint8_t minc(int32_t c) {
-    if(c > 255)
-        return 255;
-    return c;
+	if (c > 255)
+		return 255;
+	return c;
 }
 
-static uint8_t nn(int32_t c)
-{
-    if (c<0)
-        return 0;
-    return c;
+static uint8_t nn(int32_t c) {
+	if (c < 0)
+		return 0;
+	return c;
 }
 
+void ili_refresh(int contrast, int hue, int bl, int width, int height,
+		char *data) {
+	static int setup, initialized;
+	if (!setup) {
+		lcd_setup();
+		setup = 1;
+	}
 
-void ili_refresh(int contrast, int hue, int bl, int width, int height, char *data)
-{
-    static int setup, initialized;
-    if(!setup) {
-        lcd_setup();
-        setup = 1;
-    }
-    
-    if(bl != backlight) {
-        backlight = !!bl;
-        ///Enable backlight
-        gpio_set_level(PIN_NUM_BCKL, backlight);
-        if(!backlight) {
-            lcd_cmd(TFT_CMD_SWRESET);
-            initialized = 0;
-        }
-    }   
+	if (bl != backlight) {
+		backlight = !!bl;
+		///Enable backlight
+		gpio_set_level(PIN_NUM_BCKL, backlight);
+		if (!backlight) {
+			lcd_cmd(TFT_CMD_SWRESET);
+			initialized = 0;
+		}
+	}
 
-    if(!backlight) {
-        initialized = 0;
-        return;
-    }
+	if (!backlight) {
+		initialized = 0;
+		return;
+	}
 
-    if(!initialized) {
-        lcd_init();
-        initialized = 1;
-    }
+	if (!initialized) {
+		lcd_init();
+		initialized = 1;
+	}
 
-#if 1
-    lcd_cmd(0x36);
-    uint8_t d[1] = {0xC8};
-    lcd_data(d, 1);
+	/*This gave me a hard time. Why do you even have this here? Three days now
+	 * i try to figure out why i cant switch the orientation from the initialization
+	*/
+#ifdef ILI9341_3_2
+	lcd_cmd(0x36);
+	uint8_t d[1] = { 0xE0 };
+	lcd_data(d, 1);
+#else
+	lcd_cmd(0x36);
+	uint8_t d[1] = { 0xC8 };
+	lcd_data(d, 1);
 #endif
-    
-    // rebuild palette if needed
-    static int last_contrast = -1, last_hue = -1;
-    static uint16_t palette[256];
-    contrast = 100;
-    if(contrast != last_contrast || hue != last_hue) {
-        last_contrast = contrast;
-        last_hue = hue;
-        int32_t c = contrast, h = hue;
-        int32_t r, g, b;
-        if(h < 85) {
-            r = 85;
-            g = nn(2*h - 85);
-            b = nn(85 - 2*h);
-        } else if(h < 170) {
-            r = nn(85 - 2*(h-85));
-            g = 85;
-            b = nn(2*(h-85) - 85);
-        } else {
-            r = nn(2*(h-170) - 85);
-            g = nn(85 - 2*(h-170));
-            b = 85;
-        }
 
-        for(uint32_t i=0; i<256; i++) {
-            uint32_t red = minc(i*c*r/8500);
-            uint32_t green = minc(i*c*g/8500);
-            uint32_t blue = minc(i*c*b/8500);
+	// rebuild palette if needed
+	static int last_contrast = -1, last_hue = -1;
+	static uint16_t palette[256];
+	contrast = 100;
+	if (contrast != last_contrast || hue != last_hue) {
+		last_contrast = contrast;
+		last_hue = hue;
+		int32_t c = contrast, h = hue;
+		int32_t r, g, b;
+		if (h < 85) {
+			r = 85;
+			g = nn(2 * h - 85);
+			b = nn(85 - 2 * h);
+		} else if (h < 170) {
+			r = nn(85 - 2 * (h - 85));
+			g = 85;
+			b = nn(2 * (h - 85) - 85);
+		} else {
+			r = nn(2 * (h - 170) - 85);
+			g = nn(85 - 2 * (h - 170));
+			b = 85;
+		}
 
+		for (uint32_t i = 0; i < 256; i++) {
+			uint32_t red = minc(i * c * r / 8500);
+			uint32_t green = minc(i * c * g / 8500);
+			uint32_t blue = minc(i * c * b / 8500);
 
-            uint16_t c = ((red&0xF8)<<8) | ((green&0xFC) << 3) | ((blue&0xF8)>>3);
-            uint8_t *v = (uint8_t*)&c;
-            palette[i] = (v[0]<<8) | v[1];
-        }
-    }
-    
-    //spi_device_select(ili_spi, 0);
+			uint16_t c = ((red & 0xF8) << 8) | ((green & 0xFC) << 3)
+					| ((blue & 0xF8) >> 3);
+			uint8_t *v = (uint8_t*) &c;
+			palette[i] = (v[0] << 8) | v[1];
+		}
+	}
 
-    // put input data into dma buffer decoding palette
-    int yc = 0;
-    static int curline;
-    for(int y=0; y<height; y++) {
-        uint16_t *pl = &dma_lines[curline][yc*LINE_LEN];
-        for(int x=0; x<width; x++) {
-            uint8_t c = data[y*width+x];
-            *pl++ = palette[c];
-        }
-        yc++;
-        if(yc == PARALLEL_LINES || y == height-1) {
-            send_lines(y-PARALLEL_LINES, curline);
-            curline = !curline;
-            yc = 0;
-        }
-    }
+	//spi_device_select(ili_spi, 0);
+
+	// put input data into dma buffer decoding palette
+	int yc = 0;
+	static int curline;
+	for (int y = 0; y < height; y++) {
+		uint16_t *pl = &dma_lines[curline][yc * LINE_LEN];
+		for (int x = 0; x < width; x++) {
+			uint8_t c = data[y * width + x];
+			*pl++ = palette[c];
+		}
+		yc++;
+		if (yc == PARALLEL_LINES || y == height - 1) {
+			send_lines(y - PARALLEL_LINES, curline);
+			curline = !curline;
+			yc = 0;
+		}
+	}
 }
